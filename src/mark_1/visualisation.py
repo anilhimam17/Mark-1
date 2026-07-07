@@ -6,7 +6,7 @@ from pandas import DataFrame
 from numpy import append
 
 # Visualisation Deps
-from fastf1.plotting import get_driver_color_mapping
+from fastf1.plotting import get_driver_style
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import to_rgba
@@ -31,23 +31,21 @@ class DataVisualisation:
         driver_names: list,
     ) -> None:
         
-        # Accessing all the Driver Colors
-        driver_colors_full = get_driver_color_mapping(session=session)
+        # Cacheing the Driver Colors and Markers
+        self.driver_colors_hex = {}
+        self.driver_colors_rgba = {}
+        self.driver_markers = {}
         
-        # Cacheing the Necessary Driver Colors in Hexcode
-        self.driver_color_hex = {}
+        # Accessing the Styles for each Driver
         for driver in driver_names:
-            self.driver_color_hex[driver] = driver_colors_full[driver]
-
-        # Cacheing the Necessary Driver Colors as RGBA
-        self.driver_color_rgba = {}
-        for driver in driver_names:
+            driver_style = get_driver_style(driver, style=["marker", "color"], session=session)
+            self.driver_colors_hex[driver] = driver_style["color"]
+            self.driver_markers[driver] = driver_style["marker"]
             
             # Converting the Hexcode to RGBA
-            rgba = to_rgba(driver_colors_full[driver], alpha=0.5)
+            rgba = to_rgba(self.driver_colors_hex[driver], alpha=0.5)
             rgba_str = f"rgba({rgba[0]}, {rgba[1]}, {rgba[2]}, {rgba[3]})"
-            
-            self.driver_color_rgba[driver] = rgba_str
+            self.driver_colors_rgba[driver] = rgba_str
 
         # Instance of all the necessary configurations
         self.vis_config = VisualisationConfig()
@@ -61,6 +59,7 @@ class DataVisualisation:
         figsize: tuple[int, int],
         data: DataFrame,
         hue: str,
+        style: str,
         size: int,
         plot_kind: str,
     ) -> figure.Figure:
@@ -100,7 +99,9 @@ class DataVisualisation:
                 x=x,
                 y=y,
                 hue=hue,
-                palette=self.driver_color_hex,
+                palette=self.driver_colors_hex,
+                style=style,
+                markers=self.driver_markers,
                 ax=axes,
                 s=size
             )
@@ -117,7 +118,9 @@ class DataVisualisation:
                     x=x,
                     y=y,
                     hue=hue,
-                    palette=self.driver_color_hex,
+                    palette=self.driver_colors_hex,
+                    style=style,
+                    markers=self.driver_markers,
                     ax=axes[ax_idx],
                     s=size
                 )
@@ -166,7 +169,7 @@ class DataVisualisation:
                 x=x,
                 y=y,
                 hue=hue,
-                palette=self.driver_color_hex,
+                palette=self.driver_colors_hex,
                 ax=axes[ax_idx],
             )
             
@@ -200,7 +203,7 @@ class DataVisualisation:
             col=col,
             height=height,
             aspect=aspect,
-            palette=self.driver_color_hex
+            palette=self.driver_colors_hex
         )
 
         # Plotting the Facets with Regplots
@@ -243,7 +246,7 @@ class DataVisualisation:
             y=y,
             ax=axes,
             hue=hue,
-            palette=self.driver_color_hex,
+            palette=self.driver_colors_hex,
             gap=0.2
         )
 
@@ -343,7 +346,7 @@ class DataVisualisation:
                         theta=pace_categories_closed,
                         fill="toself",
                         name=driver,
-                        fillcolor=self.driver_color_rgba[driver],
+                        fillcolor=self.driver_colors_rgba[driver],
                         legendgrouptitle_text=driver,
                         legendgroup=driver,
                         subplot="polar",
@@ -359,7 +362,7 @@ class DataVisualisation:
                         theta=pace_categories_closed,
                         fill="toself",
                         name=driver,
-                        fillcolor=self.driver_color_rgba[driver],
+                        fillcolor=self.driver_colors_rgba[driver],
                         legendgrouptitle_text=driver,
                         legendgroup=driver,
                         subplot="polar2",
@@ -384,7 +387,7 @@ class DataVisualisation:
                         theta=speed_categories_closed,
                         fill="toself",
                         name=driver,
-                        fillcolor=self.driver_color_rgba[driver],
+                        fillcolor=self.driver_colors_rgba[driver],
                         legendgrouptitle_text=driver,
                         legendgroup=driver,
                         subplot="polar3",
@@ -400,7 +403,7 @@ class DataVisualisation:
                         theta=speed_categories_closed,
                         fill="toself",
                         name=driver,
-                        fillcolor=self.driver_color_rgba[driver],
+                        fillcolor=self.driver_colors_rgba[driver],
                         legendgrouptitle_text=driver,
                         legendgroup=driver,
                         subplot="polar4",
@@ -425,7 +428,7 @@ class DataVisualisation:
                         theta=energy_categories_closed,
                         fill="toself",
                         name=driver,
-                        fillcolor=self.driver_color_rgba[driver],
+                        fillcolor=self.driver_colors_rgba[driver],
                         legendgrouptitle_text=driver,
                         legendgroup=driver,
                         subplot="polar5",
@@ -441,7 +444,7 @@ class DataVisualisation:
                         theta=energy_categories_closed,
                         fill="toself",
                         name=driver,
-                        fillcolor=self.driver_color_rgba[driver],
+                        fillcolor=self.driver_colors_rgba[driver],
                         legendgrouptitle_text=driver,
                         legendgroup=driver,
                         subplot="polar6",
