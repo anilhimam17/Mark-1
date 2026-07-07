@@ -107,7 +107,8 @@ class CircuitData:
     """This class is the container for all the circuit specification in the Grandprix Calender."""
 
     STRAIGHTS: dict[str, float] = field(default_factory=lambda: {
-        "barcelona": 0.44   # Verified by Al Kamel
+        "barcelona": 0.44,  # Verified by Al Kamel
+        "austria": 0.85     # Verified through Google Maps
     })
 
 
