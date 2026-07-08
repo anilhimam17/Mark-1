@@ -102,14 +102,41 @@ class RaceStrategyConfig:
 # ======================= Circuit Specific Configurations =======================
 
 
-@dataclass(frozen=True)
-class CircuitData:
-    """This class is the container for all the circuit specification in the Grandprix Calender."""
+@dataclass
+class SectorConfig:
+    """This class standardises the structure of data expected for each sector from the 
+    circuit json files."""
 
-    STRAIGHTS: dict[str, float] = field(default_factory=lambda: {
-        "barcelona": 0.44,  # Verified by Al Kamel
-        "austria": 0.85     # Verified through Google Maps
-    })
+    # Visualisation Vars
+    title: str
+    x_var: str
+    y_var: str
+
+
+@dataclass
+class CircuitConfig:
+    """This class standardises the structure of data expected from each circuit json file."""
+
+    # Meta Data
+    circuit_name: str
+    acceleration_dist: float
+
+    # Visualisation Vars
+    aero_config: dict[str, SectorConfig]
+
+    @classmethod
+    def from_dict(cls, json_dict: dict) -> 'CircuitConfig':
+
+        aero_parsed = {
+            k: SectorConfig(**v) for k, v in 
+            json_dict["aero_config"].items()
+        }
+
+        return cls(
+            circuit_name=json_dict["circuit_name"],
+            aero_config=aero_parsed,
+            acceleration_dist=json_dict["acceleration_dist"]
+        )
 
 
 # ======================= Data Visualisation Configurations =======================
@@ -119,15 +146,18 @@ class CircuitData:
 class VisualisationConfig:
     """This class if the container for all the Visualisation based configurations."""
 
-    AERO_VIS_CONFIG: list[tuple[str, str, str]] = field(default_factory=lambda: [
-        ("Sector1Time", "FrontAEI", "Sector 1\nHigh Speed, Downforce / Drag Tradeoff"), 
-        ("Sector2Time", "BalancedAEI", "Sector 2\nMedium Speed, High Downforce & Minimal Drag"), 
-        ("Sector3Time", "RearAEI", "Sector 3\nMedium - Low Speed, High Downforce")
-    ])
-
     ERS_VIS_CONFIG: list[tuple[str, str, str]] = field(default_factory=lambda: [
         ("AccelerationTime", "ERS_Clipping", "")
     ])
+
+    POLAR_CONFIG: dict = field(default_factory=lambda: 
+        dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, 100]
+            )
+        )
+    )
 
     KE_VIS_CONFIG: list[tuple[str, str, str]] = field(default_factory=lambda: [
         ("Driver", "KineticEnergyS1_KJ", "Sector 1\nHigh Speed, Downforce / Drag Tradeoff"),
@@ -140,12 +170,3 @@ class VisualisationConfig:
         ("Driver", "PowerS2_KW", "Sector 2\nMedium Speed, High Downforce & Minimal Drag"),
         ("Driver", "PowerS3_KW", "Sector 3\nMedium - Low Speed, High Downforce")
     ])
-
-    POLAR_CONFIG: dict = field(default_factory=lambda: 
-        dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, 100]
-            )
-        )
-    )
