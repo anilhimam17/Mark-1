@@ -18,7 +18,12 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 # Source Deps
-from .config import VisualisationConfig, FeatureConfig
+from .config import (
+    CircuitConfig,
+    FeatureConfig,
+    VisualisationConfig, 
+)
+from .utils import load_circuit_config
 
 
 class DataVisualisation:
@@ -29,8 +34,9 @@ class DataVisualisation:
         self, 
         session: Session,
         driver_names: list,
+        circuit: str
     ) -> None:
-        
+
         # Cacheing the Driver Colors and Markers
         self.driver_colors_hex = {}
         self.driver_colors_rgba = {}
@@ -40,7 +46,7 @@ class DataVisualisation:
         for driver in driver_names:
             driver_style = get_driver_style(driver, style=["marker", "color"], session=session)
             self.driver_colors_hex[driver] = driver_style["color"]
-            self.driver_markers[driver] = driver_style["marker"]
+            self.driver_markers[driver] = driver_style["marker"].replace("x", "X")
             
             # Converting the Hexcode to RGBA
             rgba = to_rgba(self.driver_colors_hex[driver], alpha=0.5)
@@ -50,6 +56,10 @@ class DataVisualisation:
         # Instance of all the necessary configurations
         self.vis_config = VisualisationConfig()
         self.feature_config = FeatureConfig()
+
+        # Loading the circuit specific configurations
+        circuit_spec = load_circuit_config(circuit=circuit)
+        self.circuit_config = CircuitConfig.from_dict(json_dict=circuit_spec)
 
     # ======================= Member Methods =======================
     def create_scatter_plots(
@@ -82,7 +92,7 @@ class DataVisualisation:
         # Accessing the Scatter Plot Configurations
         plot_configs = None
         if plot_kind == "aero":
-            plot_configs = self.vis_config.AERO_VIS_CONFIG
+            plot_configs = self.circuit_config.aero_config
         elif plot_kind == "ers_clip":
             plot_configs = self.vis_config.ERS_VIS_CONFIG
 
@@ -91,6 +101,7 @@ class DataVisualisation:
 
         # If there is only one subplot
         if len(plot_configs) == 1:
+            assert isinstance(plot_configs, list), "ERS plotting config failed"
             x, y, title = plot_configs[0]
 
             # Subplot for the Axes.
@@ -109,14 +120,15 @@ class DataVisualisation:
             axes.grid()
         # If there are multiple subplots
         else:
-            for ax_idx, ax_config in enumerate(plot_configs):
-                x, y, title = ax_config
+            assert isinstance(plot_configs, dict), "Aero plotting config failed"
+            for ax_idx, ax_config in enumerate(plot_configs.items()):
+                _, sector_config = ax_config
 
                 # Subplot for the Axes.
                 sns.scatterplot(
                     data=data,
-                    x=x,
-                    y=y,
+                    x=sector_config.x_var,
+                    y=sector_config.y_var,
                     hue=hue,
                     palette=self.driver_colors_hex,
                     style=style,
@@ -124,7 +136,7 @@ class DataVisualisation:
                     ax=axes[ax_idx],
                     s=size
                 )
-                axes[ax_idx].set_title(title, pad=25)
+                axes[ax_idx].set_title(sector_config.title, pad=25)
                 axes[ax_idx].grid()
             
         return fig
