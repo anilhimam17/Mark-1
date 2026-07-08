@@ -7,12 +7,13 @@ from pandas import Series, DataFrame, concat
 # Source Deps
 from .config import (
     SECTOR_MAPS,
+    CircuitConfig,
     CarSepecifications,
-    CircuitData,
     ConversionConstants,
     FeatureConfig,
     RaceStrategyConfig
 )
+from .utils import load_circuit_config
 
 
 class DataPipeline:
@@ -20,10 +21,12 @@ class DataPipeline:
     on the FastF1 Laps DataFrames. It can generate all the new features that are
     added to the raw FastF1 Laps DataFrame."""
 
-    def __init__(self) -> None:
+    def __init__(self, circuit: str) -> None:
 
+        circuit_json = load_circuit_config(circuit=circuit)
+        
         # Instances of all the configurations used by the Pipeline
-        self.circuit_spec = CircuitData()
+        self.circuit_spec = CircuitConfig.from_dict(json_dict=circuit_json)
         self.car_spec = CarSepecifications()
         self.conversion_spec = ConversionConstants()
         self.feature_spec = FeatureConfig()
@@ -245,7 +248,7 @@ class DataPipeline:
         """This function calculates the acceleration time on the longest straight 
         given velocity params and returns the result in seconds."""
 
-        distance_straight = self.circuit_spec.STRAIGHTS[circuit]
+        distance_straight = self.circuit_spec.acceleration_dist
         delta_acceleration_time = (2 * distance_straight) / (v1 + v2)
 
         return delta_acceleration_time * 3600
