@@ -1,0 +1,21 @@
+{
+    "circuit_name": "barcelona",
+    "aero_config": {
+        "sector1": {
+            "title": "Sector - 1\nHigh Speed, Downforce / Drag Tradeoff (Front Axle)",
+            "x_var": "Sector1Time",
+            "y_var": "FrontAEI"
+        },
+        "sector2": {
+            "title": "Sector - 2\nMedium Speed, High Downforce & Minimal Drag (Balance)",
+            "x_var": "Sector2Time",
+            "y_var": "BalancedAEI"
+        },
+        "sector3": {
+            "title": "Sector - 3\nMedium - Low Speed, High Downforce & Traction (Rear Axle)",
+            "x_var": "Sector3Time",
+            "y_var": "RearAEI"
+        }
+    },
+    "acceleration_dist": 0.44
+}
