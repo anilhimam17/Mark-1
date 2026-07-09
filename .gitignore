@@ -1,2 +1,5 @@
 # Avoid package tracking cache
 __pycache__
+
+# Avoid tracking AI code review prompts
+prompt.md
