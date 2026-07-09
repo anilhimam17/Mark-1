@@ -27,7 +27,7 @@ class DataLoader:
             )
             gp_weekend.quali_session = quali_session
         except Exception as e:
-            print(f"Exeception {str(e)} incurred while retrieveing the data for Qualifying.")
+            print(f"Exeception {str(e)} incurred while retrieving the data for Qualifying.")
 
         # Loading the Race Session
         try:
@@ -40,7 +40,7 @@ class DataLoader:
             )
             gp_weekend.race_session = race_session
         except Exception as e:
-            print(f"Exeception {str(e)} incurred while retrieveing the data for the Race.")
+            print(f"Exeception {str(e)} incurred while retrieving the data for the Race.")
 
         # Loading the Sprint Data
         if is_sprint:

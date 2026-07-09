@@ -8,7 +8,7 @@ from pandas import Series, DataFrame, concat
 from .config import (
     SECTOR_MAPS,
     CircuitConfig,
-    CarSepecifications,
+    CarSpecifications,
     ConversionConstants,
     FeatureConfig,
     RaceStrategyConfig
@@ -27,7 +27,7 @@ class DataPipeline:
         
         # Instances of all the configurations used by the Pipeline
         self.circuit_spec = CircuitConfig.from_dict(json_dict=circuit_json)
-        self.car_spec = CarSepecifications()
+        self.car_spec = CarSpecifications()
         self.conversion_spec = ConversionConstants()
         self.feature_spec = FeatureConfig()
         self.race_spec = RaceStrategyConfig()
@@ -236,12 +236,11 @@ class DataPipeline:
             else:
                 sector_power = concat([sector_power, driver_power], axis=0)
 
-        assert sector_power is not None, "There sector ke was None"
+        assert sector_power is not None, "There sector power was None"
         return sector_power
     
     def get_delta_acceleration_time(
         self,
-        circuit: str,
         v1: float,
         v2: float
     ) -> float:
@@ -391,11 +390,11 @@ class DataPipeline:
 
         numerator = x - min_x
         denominator = max_x - min_x
-        return (numerator / denominator) * 100
+        return (numerator / denominator + 1e-7) * 100
 
     def _scale_inverse(self, x: float, min_x: float, max_x: float) -> float:
         """This funciton rescales the values of each feature which scales inversely."""
 
         numerator = max_x - x
         denominator = max_x - min_x
-        return (numerator / denominator) * 100
+        return (numerator / denominator + 1e-7) * 100
