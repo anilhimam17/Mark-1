@@ -166,26 +166,26 @@ class DataVisualisation:
         # Accessing the Scatter Plot Configurations
         plot_configs = None
         if plot_kind == "ke":
-            plot_configs = self.vis_config.KE_VIS_CONFIG
+            plot_configs = self.circuit_config.ke_config
         elif plot_kind == "power":
-            plot_configs = self.vis_config.POWER_VIS_CONFIG
+            plot_configs = self.circuit_config.power_config
 
         # Sanity Check for Plot Configs
         assert plot_configs, "The plot configuration wasn't satisfied."
-        for ax_idx, ax_config in enumerate(plot_configs):
-            x, y, title = ax_config
+        for ax_idx, ax_config in enumerate(plot_configs.items()):
+            _, sector_config = ax_config
 
             # Subplot for the Axes.
             sns.barplot(
                 data=data,
-                x=x,
-                y=y,
+                x=sector_config.x_var,
+                y=sector_config.y_var,
                 hue=hue,
                 palette=self.driver_colors_hex,
                 ax=axes[ax_idx],
             )
             
-            axes[ax_idx].set_title(title, pad=25)
+            axes[ax_idx].set_title(sector_config.title, pad=25)
             axes[ax_idx].grid()
 
         return fig
@@ -467,7 +467,7 @@ class DataVisualisation:
                 )
 
         polar_configs = {}
-        for i in range(1, nrows * ncols):
+        for i in range(1, nrows * ncols + 1):
             if i == 1:
                 polar_configs["polar"] = self.vis_config.POLAR_CONFIG
             else:
