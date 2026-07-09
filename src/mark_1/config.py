@@ -57,7 +57,7 @@ class FeatureConfig:
 
 
 @dataclass(frozen=True)
-class CarSepecifications:
+class CarSpecifications:
     """This class is the container for all the car specifications."""
 
     # Fuel Load
@@ -123,19 +123,36 @@ class CircuitConfig:
 
     # Visualisation Vars
     aero_config: dict[str, SectorConfig]
+    ke_config: dict[str, SectorConfig]
+    power_config: dict[str, SectorConfig]
 
     @classmethod
     def from_dict(cls, json_dict: dict) -> 'CircuitConfig':
 
+        # Parsing all the Aero Plot Configurations
         aero_parsed = {
             k: SectorConfig(**v) for k, v in 
             json_dict["aero_config"].items()
         }
 
+        # Parsing all the Kinetic Energy Plot Configurations
+        ke_parsed = {
+            k: SectorConfig(**v) for k, v in
+            json_dict["ke_config"].items()
+        }
+
+        # Parsing all the Power Plot Configurations
+        power_parsed = {
+            k: SectorConfig(**v) for k, v in
+            json_dict["power_config"].items()
+        }
+
         return cls(
             circuit_name=json_dict["circuit_name"],
+            acceleration_dist=json_dict["acceleration_dist"],
             aero_config=aero_parsed,
-            acceleration_dist=json_dict["acceleration_dist"]
+            ke_config=ke_parsed,
+            power_config=power_parsed
         )
 
 
@@ -158,15 +175,3 @@ class VisualisationConfig:
             )
         )
     )
-
-    KE_VIS_CONFIG: list[tuple[str, str, str]] = field(default_factory=lambda: [
-        ("Driver", "KineticEnergyS1_KJ", "Sector 1\nHigh Speed, Downforce / Drag Tradeoff"),
-        ("Driver", "KineticEnergyS2_KJ", "Sector 2\nMedium Speed, High Downforce & Minimal Drag"),
-        ("Driver", "KineticEnergyS3_KJ", "Sector 3\nMedium - Low Speed, High Downforce"),
-    ])
-
-    POWER_VIS_CONFIG: list[tuple[str, str, str]] = field(default_factory=lambda: [
-        ("Driver", "PowerS1_KW", "Sector 1\nHigh Speed, Downforce / Drag Tradeoff"),
-        ("Driver", "PowerS2_KW", "Sector 2\nMedium Speed, High Downforce & Minimal Drag"),
-        ("Driver", "PowerS3_KW", "Sector 3\nMedium - Low Speed, High Downforce")
-    ])
