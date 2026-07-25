@@ -10,7 +10,7 @@ class DataLoader:
     def __init__(self, race_event: Event) -> None:
         self.race_event = race_event
 
-    def load_data(self, is_sprint: bool = False) -> EventSessions:
+    def load_data(self, is_sprint: bool = False, load_telemetry: bool = False) -> EventSessions:
         """Loads all the information available through FastF1 for the Qualifying and
         Race sessions for a Race Event instance provided and returns them."""
 
@@ -21,7 +21,7 @@ class DataLoader:
             quali_session = self.race_event.get_qualifying()
             quali_session.load(
                 laps=True,
-                telemetry=True,
+                telemetry=load_telemetry,
                 weather=True,
                 messages=True
             )
@@ -34,7 +34,7 @@ class DataLoader:
             race_session = self.race_event.get_race()
             race_session.load(
                 laps=True,
-                telemetry=True,
+                telemetry=load_telemetry,
                 weather=True,
                 messages=True
             )
@@ -50,7 +50,7 @@ class DataLoader:
                 sprint_quali_session = self.race_event.get_sprint_qualifying()
                 sprint_quali_session.load(
                     laps=True,
-                    telemetry=True,
+                    telemetry=load_telemetry,
                     weather=True,
                     messages=True
                 )
@@ -63,7 +63,7 @@ class DataLoader:
                 sprint_race_session = self.race_event.get_sprint()
                 sprint_race_session.load(
                     laps=True,
-                    telemetry=True,
+                    telemetry=load_telemetry,
                     weather=True,
                     messages=True
                 )
