@@ -1,3 +1,9 @@
+"""This script houses the custom class DataPipeline.
+
+The purpose of this script is to abstract the Data Engineering operations
+under a single class.
+"""
+
 # FastF1 Deps
 from fastf1.core import Laps
 
@@ -17,12 +23,14 @@ from .utils import load_circuit_config
 
 
 class DataPipeline:
-    """This class is responsible for all the transformation operations performed
-    on the FastF1 Laps DataFrames. It can generate all the new features that are
-    added to the raw FastF1 Laps DataFrame."""
+    """This class handles all the Data Engineering API.
+
+    It house multiple method for all the transformations made to the raw FastF1 data.
+    This includes: Feature Engineering, Feature Scaling and Point Stats.
+    """
 
     def __init__(self, circuit: str) -> None:
-
+        """Class Constructor."""
         circuit_json = load_circuit_config(circuit=circuit)
         
         # Instances of all the configurations used by the Pipeline
@@ -36,12 +44,9 @@ class DataPipeline:
     def get_filtered_quali_laps(
             self, 
             laps_frame: Laps, 
-            drivers: list
         ) -> DataFrame:
-        """This function filters all the laps from Q3 in qualifying to only the top runners
-        from the race and retrieves their respective fastest laptimes."""
-
-        # Aggregations functions for each of the cols for the best lap
+        """Filters the fastest Qualifying Laps for each driver during the session."""
+        # Aggregation functions for best performance
         agg_functions = {
             "Sector1Time": "min",
             "Sector2Time": "min",
@@ -55,7 +60,6 @@ class DataPipeline:
 
         filtered_fastest_quali_laps = (
             laps_frame
-            .pick_drivers(drivers)
             .groupby("Driver")
             .agg(agg_functions)
             .reset_index()
@@ -66,11 +70,9 @@ class DataPipeline:
     def get_mean_race_laps(
         self,
         laps_frame: Laps,
-        drivers: list
     ) -> DataFrame:
-        """This function filters all the race laps for the mean performance of 
-        each provided drivers and returns the filtered frame."""
-
+        """Filters the mean Race Lap (performance) for each of driver during the session."""
+        # Aggregation functions for mean performance
         agg_functions = {
             "Sector1Time": "mean",
             "Sector2Time": "mean",
@@ -84,7 +86,6 @@ class DataPipeline:
 
         filtered_mean_race_laps = (
             laps_frame
-            .pick_drivers(drivers)
             .groupby("Driver")
             .agg(agg_functions)
             .reset_index()
@@ -99,9 +100,7 @@ class DataPipeline:
             laps_frame: Laps,
             drivers: list
     ) -> Series:
-        """The function orchestrates the calculation of Aero Efficiency for each driver
-        and returns the combined series for all the drivers."""
-
+        """Orchestrates the calculation of Aerodynamic Efficiency based on the Circuit Characteristics."""
         # Accessing the Respective Keys from Config
         speed_key, time_key, _ = SECTOR_MAPS[sector]
 
@@ -141,9 +140,7 @@ class DataPipeline:
             sector_time: float,
             purple_sector_time: float
         ) -> float:
-        """This function estimates the Aero Efficiency of the Front and Rear Axles based on
-        the velocity params provided and the corresponding sector time."""
-
+        """Estimates the Aerodynamic Efficiency using the appropriate velocity parameters."""
         # Raw Speed Retention
         speed_ratio = v_sector / v_st
 
@@ -161,9 +158,7 @@ class DataPipeline:
             laps_frame: Laps,
             drivers: list
     ) -> Series:
-        """The function orchestrates the calculation of Kinetic Energy Retention for 
-        each driver and returns the combined series for all the drivers."""
-
+        """Orchestrates the calculation of Kinetic Energy Retention based on Circuit Characteristics."""
         # Accessing the Respective Keys from Config
         speed_key, _, _ = SECTOR_MAPS[sector]
 
@@ -196,9 +191,7 @@ class DataPipeline:
         v1: float,
         v2: float
     ) -> float:
-        """This function calculates the change in Kinetic Energy given velocity params and
-        returns the result in Kilo Joules."""
-
+        """Estimates the Difference in Kinetic Energy using the appropriate velocity parameters."""
         # Convert velocities to m/s before squaring to preserve physical scaling
         v1_ms = v1 * self.conversion_spec.MS_CONV_CONST
         v2_ms = v2 * self.conversion_spec.MS_CONV_CONST
@@ -215,9 +208,7 @@ class DataPipeline:
         laps_frame: Laps,
         drivers: list
     ) -> Series:
-        """The function orchestrates the calculation of Power Expenditure of
-        each driver and returns the combined series for all the drivers."""
-
+        """Estimates the Power Deployment based on Circuit Characteristics and Kinetic Energy Retention."""
         # Accessing the Respective Keys from Config
         _, time_key, energy_key = SECTOR_MAPS[sector]
 
@@ -244,9 +235,7 @@ class DataPipeline:
         v1: float,
         v2: float
     ) -> float:
-        """This function calculates the acceleration time on the longest straight 
-        given velocity params and returns the result in seconds."""
-
+        """Estimates the Average Acceleration using the appropriate velocity parameters."""
         distance_straight = self.circuit_spec.acceleration_dist
         delta_acceleration_time = (2 * distance_straight) / (v1 + v2)
 
@@ -254,9 +243,10 @@ class DataPipeline:
 
     # ==================== Traffic and Delta related methods ====================
     def get_traffic_delta(self, laps_frame: Laps) -> Laps:
-        """This function generates the effective traffic delta that each driver
-        tackles during the race. It especially plays a major role in pace and deg calculations."""
-
+        """Orchestrates the calculation of the traffic window that each driver experiences during the race.
+        
+        It is based on the Time Synchronised Positions of each driver at the start and end of the lap.
+        """
         # Sorting all the Laps wrt Session Time for Traffic
         laps_frame_traffic = laps_frame.sort_values(
             by="Time", 
@@ -280,8 +270,7 @@ class DataPipeline:
             current_driver_time: Series, 
             driver_infront_time: Series
         ) -> Series:
-        """This function calculates the actual interval between two drivers for each lap."""
-
+        """Estimates the traffic window that each driver experiences during the race."""
         # Driver Delta wrt Session Time
         driver_deltas = current_driver_time - driver_infront_time
         
@@ -298,9 +287,7 @@ class DataPipeline:
             fuel_strat: float,
             fuel_sample_limit: float
         ) -> float:
-        """This function estimates the effective fuel available based on 
-        the provided parameters."""
-
+        """Estimates the Effective Fuel Load uniformly carried by each driver during the race."""
         return (
             max_fuel_load_in_kg     # in kg
             - fuel_strat            # in kg
@@ -313,9 +300,7 @@ class DataPipeline:
             race_laps: int,
             avg_laptime: float,
         ) -> float:
-        """This function estimates the effective fuel flow used by the team
-        based on the provided parameters."""
-
+        """Estimates a linear decay of the fuel based on each drivers mean laptime."""
         # Average fuel burn per lap
         avg_fuel_burn = effective_fuel_load / race_laps
         target_fuel_flow = (avg_fuel_burn / avg_laptime) * 1000
@@ -328,7 +313,6 @@ class DataPipeline:
             effective_fuel_flow: float
         ) -> float:
         """Helper function to estimate the linear fuel burn in kg."""
-        
         return (laptime * effective_fuel_flow) / 1000
 
     def get_lap_fuel_penality(
@@ -337,7 +321,6 @@ class DataPipeline:
             effective_fuel_load: float
         ) -> float:
         """Helper function to estimate the time penality to negate for Zero-Fuel pace."""
-
         delta_fuel_load = effective_fuel_load - cumulative_fuel_burn
         remaining_fuel_load = max(delta_fuel_load, 0.0)
 
@@ -349,14 +332,11 @@ class DataPipeline:
             fuel_penality: float
         ) -> float:
         """Helper function to estimate the fuel-aware (Zero-Fuel pace) laptime."""
-        
         return laptime - fuel_penality
     
     # ==================== Rescaling Functions ====================
     def get_rescaled_direct_features(self, laps_frame: DataFrame) -> DataFrame:
-        """This function orchestrates the rescaling of all the Directly Proportional
-        features from Mean / Best performance frames."""
-
+        """Rescales the features which are directly proportional."""
         for feature in self.feature_spec.DIRECT_PROPORTION:
             laps_frame.loc[:, feature] = laps_frame.apply(
                 lambda x: self._scale_direct(
@@ -370,9 +350,7 @@ class DataPipeline:
         return laps_frame
     
     def get_rescaled_inverse_features(self, laps_frame: DataFrame) -> DataFrame:
-        """This function orchestrates the rescaling of all the Inversely Proportional
-        features from Mean / Best performance frames."""
-
+        """Rescales the features which are inversely proportional."""
         for feature in self.feature_spec.INVERSE_PROPORTION:
             laps_frame.loc[:, feature] = laps_frame.apply(
                 lambda x: self._scale_inverse(
@@ -387,14 +365,12 @@ class DataPipeline:
 
     def _scale_direct(self, x: float, min_x: float, max_x: float) -> float:
         """This function rescales the values of each feature which scales directly."""
-
         numerator = x - min_x
         denominator = max_x - min_x
-        return (numerator / denominator + 1e-7) * 100
+        return (numerator / (denominator + 1e-7)) * 100
 
     def _scale_inverse(self, x: float, min_x: float, max_x: float) -> float:
         """This funciton rescales the values of each feature which scales inversely."""
-
         numerator = max_x - x
         denominator = max_x - min_x
-        return (numerator / denominator + 1e-7) * 100
+        return (numerator / (denominator + 1e-7)) * 100

@@ -1,5 +1,11 @@
-from dataclasses import dataclass, field
+"""This scripts holds all the configurations used in mark-1.
 
+The below configurations contribute to various 
+downstream data analysis workflows.
+"""
+
+
+from dataclasses import dataclass, field
 
 # ======================= Generic Mapping =======================
 
@@ -14,6 +20,7 @@ SECTOR_MAPS: dict[str, tuple[str, str, str]] = {
 
 @dataclass(frozen=True)
 class FeatureConfig:
+    """This class holds all the feature specific configurations necessary for downstream workflows."""
 
     # ======================= Feature Categorisation =======================
     # Overlapping Features, especially for this regulations
@@ -75,8 +82,7 @@ class CarSpecifications:
 
 @dataclass(frozen=True)
 class ConversionConstants:
-    """This class is the container for all the conversion constants relevant to the
-    car performance calculations."""
+    """This class contains all the constants used for car-based calculations."""
 
     # Fuel Flow in g/sec
     FUEL_FLOW_CONV_CONST = 1000 / 3600
@@ -104,8 +110,7 @@ class RaceStrategyConfig:
 
 @dataclass
 class SectorConfig:
-    """This class standardises the structure of data expected for each sector from the 
-    circuit json files."""
+    """This class standardises the data structure expected for each sector in circuit json files."""
 
     # Visualisation Vars
     title: str
@@ -128,7 +133,7 @@ class CircuitConfig:
 
     @classmethod
     def from_dict(cls, json_dict: dict) -> 'CircuitConfig':
-
+        """Reconstructs the CircuitConfig object using the loaded Circuit JSON as dict."""
         # Parsing all the Aero Plot Configurations
         aero_parsed = {
             k: SectorConfig(**v) for k, v in 

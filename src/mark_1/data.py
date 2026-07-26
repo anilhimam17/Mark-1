@@ -1,19 +1,28 @@
+"""This script houses the custom class DataLoader.
+
+The purpose of this script is to manage the high-level operations 
+performed on the raw FastF1 Dataframe loaded through API requests.
+"""
+
+# FastF1 Deps
 from fastf1.events import Event
 
+# Source Deps
 from .utils import EventSessions
 
 
 class DataLoader:
-    """This class is responsible for managing the loading and storing operations
-    performed on the raw FastF1 dataframes."""
+    """This class manages the data loading operations performed on the raw FastF1 dataframes."""
 
     def __init__(self, race_event: Event) -> None:
+        """Class Constructor."""
         self.race_event = race_event
 
     def load_data(self, is_sprint: bool = False, load_telemetry: bool = False) -> EventSessions:
-        """Loads all the information available through FastF1 for the Qualifying and
-        Race sessions for a Race Event instance provided and returns them."""
-
+        """Loads the Grand Prix data from FastF1.
+        
+        It loads the appropriate session based on the parameters provided such as qualifying, sprint and grandprix sessions.
+        """
         gp_weekend = EventSessions()
 
         # Loading the Qualifying Session

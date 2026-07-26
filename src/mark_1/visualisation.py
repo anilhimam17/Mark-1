@@ -1,34 +1,42 @@
+"""This script houses the custom class DataVisualisation.
+
+The purpose of this script is to manage the generation of 
+all the charts used for analysis.
+"""
+
 # FastF1 Deps
 from fastf1.core import Session
-
-# Data Deps
-from pandas import DataFrame
-from numpy import append
 
 # Visualisation Deps
 from fastf1.plotting import get_driver_style
 
 import matplotlib.pyplot as plt
-from matplotlib.colors import to_rgba
 from matplotlib import figure
-
+from matplotlib.colors import to_rgba
 import seaborn as sns
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+# Data Deps
+from numpy import append
+from pandas import DataFrame
+
 # Source Deps
 from .config import (
     CircuitConfig,
     FeatureConfig,
-    VisualisationConfig, 
+    VisualisationConfig,
 )
 from .utils import load_circuit_config
 
 
 class DataVisualisation:
-    """This class is responsible for all the Visualisation generated on the data
-    that was processed using the downstream API."""
+    """This class handles all the Visualisation API.
+
+    It houses multiple methods that aid visualising Aero Efficiency,
+    Energy Retention and Power Deployment among others.
+    """
 
     def __init__(
         self, 
@@ -36,7 +44,7 @@ class DataVisualisation:
         driver_names: list,
         circuit: str
     ) -> None:
-
+        """Class Constructor."""
         # Cacheing the Driver Colors and Markers
         self.driver_colors_hex = {}
         self.driver_colors_rgba = {}
@@ -73,9 +81,11 @@ class DataVisualisation:
         size: int,
         plot_kind: str,
     ) -> figure.Figure:
-        """This function creates a Matplotlib canvas of subplots and creates a Seaborn
-        Scatterplot for each of the subplots. It then returns the completed figure."""
+        """Generates a Matplotlib subplot with Seaborn Scatterplots.
 
+        It can generate plots that match different parameters based on the plot_kind parameter.
+        This includes: Aero Efficiency and ERS Clipping.
+        """
         # Matplotlib Canvas
         fig, axes = plt.subplots(
             nrows=nrows,
@@ -150,9 +160,11 @@ class DataVisualisation:
             hue: str,
             plot_kind: str
         ) -> figure.Figure:
-        """This function creates a Matplotlib canvas of subplots and creates a Seaborn
-        Barplot for each of the subplots. It then returns the completed figure."""
-
+        """Generates a Matplotlib subplot with Seaborn Barplots.
+        
+        It can generate plots that match different parameters based on the plot_kind parameter.
+        This includes: Kinetic Energy Retention and Power Deployment.
+        """
         # Matplotlib Canvas
         fig, axes = plt.subplots(
             nrows=nrows,
@@ -202,9 +214,12 @@ class DataVisualisation:
         row: str | None = None,
         col: str | None = None
     ) -> sns.FacetGrid:
-        """This function generates a seaborn Facet Grid that visualises Tyre Degradation
-        by Driver and Stint along with other customisations."""
-
+        """Generates a Seaborn FacetGrid of Regression Plots.
+        
+        It can generate multiple regression plots illustrating the Tyre Degradation
+        of the Drivers through each of their respective stint for a given race / 
+        sector over the race.
+        """
         # Outlined Grid for Facet Plots
         pace_grid = sns.FacetGrid(
             data=laps_frame,
@@ -242,9 +257,11 @@ class DataVisualisation:
         hue: str,
         figsize: tuple[int, int]
     ) -> figure.Figure:
-        """This function generates a Seaborn Boxplot that visualises the Race Pace
-        by Driver and Stint along with other customisations."""
-
+        """Generates a Seaborn Boxplot.
+        
+        It can generate a boxplot illustrating the pace of each driver through a stint
+        over the race distance for the full lap and each individual sector.
+        """
         pace_grid, axes = plt.subplots(
             nrows=1, 
             ncols=1, 
@@ -277,10 +294,12 @@ class DataVisualisation:
             show_speed_categories: bool = True,
             show_energy_categories: bool = True
         ) -> go.Figure:
-        """This function generates a Plotly subplot that visualises multiple
-        Radar Plots (go.Scatterpolar objects) which compare the performances of 
-        the drivers in quali and race trim."""
-
+        """Generates a Plotly Radar Plot (Scatter Polar Plot).
+        
+        It can generate Radar Charts that summarise the performance of the drivers
+        in Qualifying and Race Trims over multiple parameters. This includes:
+        Pace Features, Speed Features and Energy Features.
+        """
         # Subplot Spec
         ncols = 2
         nrows = [

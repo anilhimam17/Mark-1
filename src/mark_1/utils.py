@@ -1,3 +1,9 @@
+"""This script houses all the auxiliary utility functions.
+
+These functions exist as they provide important features which
+aren't semantically enclosed in a separate class.
+"""
+
 # FastF1 Deps
 from fastf1.core import Session
 
@@ -6,14 +12,17 @@ from dataclasses import dataclass
 from pandas import Series
 
 # Core Deps
-from json import load
 from importlib import resources
+from json import load
 
 
 @dataclass
 class EventSessions:
-    """This data class outlines the structured response that is returned on loading
-    data using the FastF1 API."""
+    """Dataclass outlines structured response for FastF1.
+
+    It houses the data loaded from FastF1 API based on the type
+    of the Grand Prix weekend.
+    """
 
     # Conventional Grandprix Weekend
     quali_session: Session | None = None
@@ -29,7 +38,6 @@ class EventSessions:
 
 def load_circuit_config(circuit: str) -> dict[str, str]:
     """Helper function to load the config file from data."""
-
     # Accessing the Data Path
     data_dir = resources.files("mark_1") / "data"
     json_transversable = data_dir / f"{circuit}.json"
@@ -44,7 +52,6 @@ def load_circuit_config(circuit: str) -> dict[str, str]:
       
 def display_sector_stat(driver_lap: Series, sector: int) -> None:
     """Helper function to display the driver stats."""
-    
     print(f"Sector - {sector}")
     print(f"Driver: {driver_lap['Driver']}")
 
