@@ -2,11 +2,13 @@
 
 from .data import DataLoader
 from .pipeline import DataPipeline
+from .precompute import PreCompute
 from .visualisation import DataVisualisation
 
 # Standardised public surface of the package
 __all__ = [
     "DataPipeline",
     "DataLoader",
-    "DataVisualisation"
+    "DataVisualisation",
+    "PreCompute"
 ]
