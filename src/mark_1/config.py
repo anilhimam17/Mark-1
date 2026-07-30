@@ -30,7 +30,7 @@ class FeatureConfig:
 
     # Pace Specific Categories
     PACE_CATEGORIES: list[str] = field(default_factory=lambda: [
-        "LapTime", "Sector1Time", "Sector2Time", "Sector3Time",
+        "FuelAwareLapTime", "Sector1Time", "Sector2Time", "Sector3Time",
         "AccelerationTime", "ERS_Clipping"
     ])
 
@@ -38,13 +38,13 @@ class FeatureConfig:
     SPEED_CATEGORIES: list[str] = field(default_factory=lambda: [
         "SpeedI1", "SpeedI2", "SpeedFL", "SpeedST",
         "FrontAEI", "BalancedAEI", "RearAEI", 
-        "AccelerationTime", "ERS_Clipping", "LapTime"
+        "AccelerationTime", "ERS_Clipping", "FuelAwareLapTime"
     ])
 
     # Energy Specific Categories
     ENERGY_CATEGORIES: list[str] = field(default_factory=lambda: [
         "KineticEnergyS1_KJ", "KineticEnergyS2_KJ", "KineticEnergyS3_KJ",
-        "AccelerationTime", "ERS_Clipping", "LapTime"
+        "AccelerationTime", "ERS_Clipping", "FuelAwareLapTime"
     ])
 
     # ======================= Feature Scaling Properties =======================
@@ -56,7 +56,22 @@ class FeatureConfig:
     INVERSE_PROPORTION: list[str] = field(default_factory=lambda: [
         "Sector1Time", "Sector2Time", "Sector3Time", 
         "KineticEnergyS1_KJ", "KineticEnergyS2_KJ", "KineticEnergyS3_KJ",
-        "AccelerationTime", "ERS_Clipping", "LapTime"
+        "AccelerationTime", "ERS_Clipping", "FuelAwareLapTime"
+    ])
+
+
+@dataclass(frozen=True)
+class DataEngineeringConfig:
+    """This class provides all the configurations used in Data Engineering Operations."""
+
+    DROP_COLS: list[str] = field(default_factory=lambda: [
+        "Sector1SessionTime", "Sector2SessionTime", "Sector3SessionTime", 
+        "DeletedReason", "FastF1Generated", "IsAccurate",
+        "LapStartDate", "LapStartTime"
+    ])
+
+    TIME_COLS: list[str] = field(default_factory=lambda: [
+        "LapTime", "Sector1Time", "Sector2Time", "Sector3Time"
     ])
 
 
@@ -112,10 +127,18 @@ class RaceStrategyConfig:
 class SectorConfig:
     """This class standardises the data structure expected for each sector in circuit json files."""
 
-    # Visualisation Vars
     title: str
     x_var: str
     y_var: str
+
+
+@dataclass
+class AccelerationConfig:
+    """This class standardises the data structure specification for Acceleration data."""
+
+    acceleration_dist: float
+    v1_var: str
+    v2_var: str
 
 
 @dataclass
@@ -124,12 +147,12 @@ class CircuitConfig:
 
     # Meta Data
     circuit_name: str
-    acceleration_dist: float
 
-    # Visualisation Vars
+    # Configurations
     aero_config: dict[str, SectorConfig]
     ke_config: dict[str, SectorConfig]
     power_config: dict[str, SectorConfig]
+    acceleration_config: AccelerationConfig
 
     @classmethod
     def from_dict(cls, json_dict: dict) -> 'CircuitConfig':
@@ -152,9 +175,12 @@ class CircuitConfig:
             json_dict["power_config"].items()
         }
 
+        # Parsing all the Acceleration Configurations
+        acc_parsed = AccelerationConfig(**json_dict["acceleration_config"])
+
         return cls(
             circuit_name=json_dict["circuit_name"],
-            acceleration_dist=json_dict["acceleration_dist"],
+            acceleration_config=acc_parsed,
             aero_config=aero_parsed,
             ke_config=ke_parsed,
             power_config=power_parsed
