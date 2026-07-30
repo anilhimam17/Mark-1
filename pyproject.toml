@@ -25,17 +25,20 @@ dev = [
     "ruff>=0.16.0",
 ]
 
-[tool.ruff]
+# It's time to get a little Ruff (Get the Reference!)
+
 # Max Code Length
+[tool.ruff]
 line-length=80
 
-[tool.ruff.lint]
 # Rules applied for linting
+[tool.ruff.lint]
 select=[
     "D"
 ]
 
 [tool.ruff.format]
+
 # Automatic Linebreak detection
 line-ending="auto"
 

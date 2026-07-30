@@ -3,3 +3,6 @@ __pycache__
 
 # Avoid tracking AI code review prompts
 prompt.md
+
+# Avoid tracking IDE setting
+settings.json
