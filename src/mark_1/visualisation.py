@@ -362,6 +362,11 @@ class DataVisualisation:
             driver_quali_data = quali_performance[quali_performance["Driver"] == driver]
             driver_race_data = race_performance[race_performance["Driver"] == driver]
 
+            if driver_quali_data.empty or driver_quali_data.empty:
+                print(f"""The driver: {driver} didn't manage the set cutoff in 
+the Quali or the race and thereby is skipped from the comparison""")
+                continue
+
             # ================ Pace Categories ================
             if show_pace_categories:
                 r_quali_pace = driver_quali_data[self.feature_config.PACE_CATEGORIES].to_numpy().flatten()
