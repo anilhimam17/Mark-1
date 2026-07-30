@@ -41,35 +41,24 @@ class DataPipeline:
         self.race_spec = RaceStrategyConfig()
 
     # ==================== Filtering Methods ====================
+    
     def get_filtered_quali_laps(
             self, 
-            laps_frame: Laps, 
+            laps_frame: Laps | DataFrame, 
         ) -> DataFrame:
         """Filters the fastest Qualifying Laps for each driver during the session."""
-        # Aggregation functions for best performance
-        agg_functions = {
-            "Sector1Time": "min",
-            "Sector2Time": "min",
-            "Sector3Time": "min",
-            "LapTime": "min",
-            "SpeedI1": "max",
-            "SpeedI2": "max",
-            "SpeedFL": "max",
-            "SpeedST": "max"
-        }
-
-        filtered_fastest_quali_laps = (
+        fastest_quali_laps = (
             laps_frame
-            .groupby("Driver")
-            .agg(agg_functions)
-            .reset_index()
+            .groupby("Driver")["FuelAwareLapTime"]
+            .idxmin()
         )
 
+        filtered_fastest_quali_laps = laps_frame.loc[fastest_quali_laps]
         return filtered_fastest_quali_laps
     
     def get_mean_race_laps(
         self,
-        laps_frame: Laps,
+        laps_frame: Laps | DataFrame,
     ) -> DataFrame:
         """Filters the mean Race Lap (performance) for each of driver during the session."""
         # Aggregation functions for mean performance
@@ -93,12 +82,49 @@ class DataPipeline:
 
         return filtered_mean_race_laps
     
+    def get_mean_race_performance(
+            self,
+            laps_frame: Laps | DataFrame
+    ) -> DataFrame:
+        """Filters the mean Race Performance (with all Engineered Features) for each driver."""
+        # Aggregation Functions
+        agg_functions = {
+            "Sector1Time": "mean",
+            "Sector2Time": "mean",
+            "Sector3Time": "mean",
+            "FuelAwareLapTime": "mean",
+            "SpeedI1": "mean",
+            "SpeedI2": "mean",
+            "SpeedFL": "mean",
+            "SpeedST": "mean",
+            "FrontAEI": "mean",
+            "BalancedAEI": "mean",
+            "RearAEI": "mean",
+            "KineticEnergyS1_KJ": "mean",
+            "KineticEnergyS2_KJ": "mean",
+            "KineticEnergyS3_KJ": "mean",
+            "PowerS1_KW": "mean",
+            "PowerS2_KW": "mean",
+            "PowerS3_KW": "mean",
+            "AccelerationTime": "mean",
+            "ERS_Clipping": "mean"
+        }
+
+        mean_race_performance = (
+            laps_frame
+            .groupby("Driver")
+            .agg(agg_functions)
+            .reset_index()
+        )
+
+        return mean_race_performance
+    
     # ==================== Feature Engineering Methods ====================
+    
     def get_aero_efficiency(
             self,
             sector: str,
-            laps_frame: Laps,
-            drivers: list
+            laps_frame: Laps
     ) -> Series:
         """Orchestrates the calculation of Aerodynamic Efficiency based on the Circuit Characteristics."""
         # Accessing the Respective Keys from Config
@@ -108,38 +134,22 @@ class DataPipeline:
         purple_sector_time = laps_frame[time_key].min()
 
         # Full AEI series
-        sector_aei = None
-        for driver in drivers:
-            
-            # Filtering the laps for the current driver
-            driver_laps = laps_frame.pick_drivers(driver)
-            
-            # Calculating the AEI for the driver
-            driver_aei = driver_laps.apply(
-                lambda x: self._calc_aero_efficiency(
-                    v_sector=x[speed_key],
-                    v_st=x["SpeedST"],
-                    sector_time=x[time_key],
-                    purple_sector_time=purple_sector_time
-                ),
-                axis=1
-            )
+        sector_aei = self._calc_aero_efficiency(
+            v_sector=laps_frame[speed_key],
+            v_st=laps_frame["SpeedST"],
+            sector_time=laps_frame[time_key],
+            purple_sector_time=purple_sector_time
+        )
 
-            if sector_aei is None:
-                sector_aei = driver_aei
-            else:
-                sector_aei = concat([sector_aei, driver_aei], axis=0)
-
-        assert sector_aei is not None, "There sector aei was None"
         return sector_aei
     
     def _calc_aero_efficiency(
             self, 
-            v_sector: float, 
-            v_st: float, 
-            sector_time: float,
+            v_sector: Series, 
+            v_st: Series, 
+            sector_time: Series,
             purple_sector_time: float
-        ) -> float:
+        ) -> Series:
         """Estimates the Aerodynamic Efficiency using the appropriate velocity parameters."""
         # Raw Speed Retention
         speed_ratio = v_sector / v_st
@@ -148,56 +158,42 @@ class DataPipeline:
         time_ratio = purple_sector_time / sector_time
 
         # Sector Time Weighting for better Pace Capture
-        aei = speed_ratio * time_ratio * self.conversion_spec.MS_CONV_CONST
+        aei = speed_ratio * time_ratio
 
+        assert aei is not None, "The Sector AEI was None"
         return aei
     
     def get_delta_kinetic_energy(
             self,
             sector: str,
-            laps_frame: Laps,
-            drivers: list
+            laps_frame: Laps
     ) -> Series:
         """Orchestrates the calculation of Kinetic Energy Retention based on Circuit Characteristics."""
         # Accessing the Respective Keys from Config
         speed_key, _, _ = SECTOR_MAPS[sector]
 
         # Full KE series
-        sector_ke = None
-        for driver in drivers:
-            
-            # Filtering the laps for the current driver
-            driver_laps = laps_frame.pick_drivers(driver)
-            
-            # Calculating the AEI for the driver
-            driver_ke = driver_laps.apply(
-                lambda x: self._calc_delta_kinetic_energy(
-                    v1=x[speed_key],
-                    v2=x["SpeedST"]
-                ),
-                axis=1
-            )
+        sector_ke = self._calc_delta_kinetic_energy(
+            v1=laps_frame[speed_key],
+            v2=laps_frame["SpeedST"]
+        )
 
-            if sector_ke is None:
-                sector_ke = driver_ke
-            else:
-                sector_ke = concat([sector_ke, driver_ke], axis=0)
-
-        assert sector_ke is not None, "There sector ke was None"
+        assert sector_ke is not None, "There Sector KE was None"
         return sector_ke
     
     def _calc_delta_kinetic_energy(
         self,
-        v1: float,
-        v2: float
-    ) -> float:
+        v1: Series,
+        v2: Series
+    ) -> Series:
         """Estimates the Difference in Kinetic Energy using the appropriate velocity parameters."""
         # Convert velocities to m/s before squaring to preserve physical scaling
-        v1_ms = v1 * self.conversion_spec.MS_CONV_CONST
-        v2_ms = v2 * self.conversion_spec.MS_CONV_CONST
+        v1_ms = v1 * self.conversion_spec.MS_CONV_CONST ** 2
+        v2_ms = v2 * self.conversion_spec.MS_CONV_CONST ** 2
+
         delta_kinetic_energy = (
             (1 / 2) * self.car_spec.CAR_WEIGHT_IN_KG * 
-            (v2_ms ** 2 - v1_ms ** 2)
+            (v2_ms - v1_ms)
         )
 
         return delta_kinetic_energy / 1e3
@@ -205,43 +201,43 @@ class DataPipeline:
     def get_power_expenditure(
         self,
         sector: str,
-        laps_frame: Laps,
-        drivers: list
+        laps_frame: Laps
     ) -> Series:
         """Estimates the Power Deployment based on Circuit Characteristics and Kinetic Energy Retention."""
         # Accessing the Respective Keys from Config
         _, time_key, energy_key = SECTOR_MAPS[sector]
 
         # Full Power series
-        sector_power = None
-        for driver in drivers:
-            
-            # Filtering the laps for the current driver
-            driver_laps = laps_frame.pick_drivers(driver)
-            
-            # Calculating the AEI for the driver
-            driver_power = driver_laps[energy_key] / driver_laps[time_key]
+        sector_power = laps_frame[energy_key] / laps_frame[time_key]
 
-            if sector_power is None:
-                sector_power = driver_power
-            else:
-                sector_power = concat([sector_power, driver_power], axis=0)
-
-        assert sector_power is not None, "There sector power was None"
+        assert sector_power is not None, "There Sector Power was None"
         return sector_power
     
     def get_delta_acceleration_time(
         self,
-        v1: float,
-        v2: float
-    ) -> float:
+        v1: Series,
+        v2: Series
+    ) -> Series:
         """Estimates the Average Acceleration using the appropriate velocity parameters."""
-        distance_straight = self.circuit_spec.acceleration_dist
+        distance_straight = self.circuit_spec.acceleration_config.acceleration_dist
         delta_acceleration_time = (2 * distance_straight) / (v1 + v2)
 
         return delta_acceleration_time * 3600
+    
+    def get_ers_clipping(
+        self,
+        v1: Series,
+        v2: Series
+    ) -> Series:
+        """Estimates the ERS clipping factor as a ratio of speeds.
+        
+        It utilises the top speed through the speed trap and the exit speed from
+        a prior corner to generate the ratio.
+        """
+        return v2 / v1
 
     # ==================== Traffic and Delta related methods ====================
+    
     def get_traffic_delta(self, laps_frame: Laps) -> Laps:
         """Orchestrates the calculation of the traffic window that each driver experiences during the race.
         
@@ -281,11 +277,12 @@ class DataPipeline:
         )
 
     # ==================== Fuel and Pace related methods ====================
+    
     def get_effective_fuel_load(
             self, 
-            max_fuel_load_in_kg: float,
-            fuel_strat: float,
-            fuel_sample_limit: float
+            max_fuel_load_in_kg: float = CarSpecifications.MAX_FUEL_LOAD_IN_KG,
+            fuel_strat: float = RaceStrategyConfig.FUEL_STRAT,
+            fuel_sample_limit: float = RaceStrategyConfig.FUEL_SAMPLE_LIMIT
         ) -> float:
         """Estimates the Effective Fuel Load uniformly carried by each driver during the race."""
         return (
@@ -297,80 +294,77 @@ class DataPipeline:
     def get_effective_fuel_flow(
             self,
             effective_fuel_load: float,
-            race_laps: int,
-            avg_laptime: float,
+            max_race_laps: int,
+            avg_laptime: float
         ) -> float:
         """Estimates a linear decay of the fuel based on each drivers mean laptime."""
         # Average fuel burn per lap
-        avg_fuel_burn = effective_fuel_load / race_laps
+        avg_fuel_burn = effective_fuel_load / max_race_laps
         target_fuel_flow = (avg_fuel_burn / avg_laptime) * 1000
 
         return target_fuel_flow
     
     def get_lap_fuel_burn(
             self, 
-            laptime: float,
+            laptimes: Series,
             effective_fuel_flow: float
-        ) -> float:
+        ) -> Series:
         """Helper function to estimate the linear fuel burn in kg."""
-        return (laptime * effective_fuel_flow) / 1000
+        return (laptimes * effective_fuel_flow) / 1000
 
     def get_lap_fuel_penality(
             self, 
-            cumulative_fuel_burn: float,
+            cumulative_fuel_burn: Series,
             effective_fuel_load: float
-        ) -> float:
+        ) -> Series:
         """Helper function to estimate the time penality to negate for Zero-Fuel pace."""
         delta_fuel_load = effective_fuel_load - cumulative_fuel_burn
-        remaining_fuel_load = max(delta_fuel_load, 0.0)
+        remaining_fuel_load = delta_fuel_load.apply(lambda x: max(x, 0.0))
 
         return remaining_fuel_load * self.conversion_spec.WEIGHT_TIME_CONV_CONST
 
     def get_fuel_aware_laptime(
             self, 
-            laptime: float,
-            fuel_penality: float
-        ) -> float:
+            laptimes: Series,
+            fuel_penality: Series
+        ) -> Series:
         """Helper function to estimate the fuel-aware (Zero-Fuel pace) laptime."""
-        return laptime - fuel_penality
+        return laptimes - fuel_penality
     
     # ==================== Rescaling Functions ====================
+    
     def get_rescaled_direct_features(self, laps_frame: DataFrame) -> DataFrame:
         """Rescales the features which are directly proportional."""
         for feature in self.feature_spec.DIRECT_PROPORTION:
-            laps_frame.loc[:, feature] = laps_frame.apply(
-                lambda x: self._scale_direct(
-                    x=x[feature],
+            laps_frame.loc[:, feature] = self._scale_direct(
+                    x=laps_frame[feature],
                     min_x=laps_frame[feature].min(),
                     max_x=laps_frame[feature].max(),
-                ),
-                axis=1
-            )
+                )
         
         return laps_frame
     
-    def get_rescaled_inverse_features(self, laps_frame: DataFrame) -> DataFrame:
+    def get_rescaled_inverse_features(self, laps_frame: DataFrame, session_type: str) -> DataFrame:
         """Rescales the features which are inversely proportional."""
         for feature in self.feature_spec.INVERSE_PROPORTION:
-            laps_frame.loc[:, feature] = laps_frame.apply(
-                lambda x: self._scale_inverse(
-                    x=x[feature],
+            laps_frame.loc[:, feature] = self._scale_inverse(
+                    x=laps_frame[feature],
                     min_x=laps_frame[feature].min(),
                     max_x=laps_frame[feature].max(),
-                ),
-                axis=1
-            )
+                )
         
         return laps_frame
 
-    def _scale_direct(self, x: float, min_x: float, max_x: float) -> float:
+    def _scale_direct(self, x: Series, min_x: float, max_x: float) -> Series:
         """This function rescales the values of each feature which scales directly."""
         numerator = x - min_x
         denominator = max_x - min_x
+        
         return (numerator / (denominator + 1e-7)) * 100
 
-    def _scale_inverse(self, x: float, min_x: float, max_x: float) -> float:
+    def _scale_inverse(self, x: Series, min_x: float, max_x: float) -> Series:
         """This funciton rescales the values of each feature which scales inversely."""
         numerator = max_x - x
         denominator = max_x - min_x
+        
         return (numerator / (denominator + 1e-7)) * 100
