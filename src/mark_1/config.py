@@ -197,12 +197,3 @@ class VisualisationConfig:
     ERS_VIS_CONFIG: list[tuple[str, str, str]] = field(default_factory=lambda: [
         ("AccelerationTime", "ERS_Clipping", "")
     ])
-
-    POLAR_CONFIG: dict = field(default_factory=lambda: 
-        dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, 100]
-            )
-        )
-    )
