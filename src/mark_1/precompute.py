@@ -173,7 +173,7 @@ class PreCompute:
         s1_power_config = self.circuit_config.power_config.get("Sector1")
         assert s1_power_config, "Failed loading S1 Power configs"
         s1_power = s1_power_config.y_var
-        cleaned_dataframe.loc[:, s1_power] = self.data_pipe.get_delta_kinetic_energy(
+        cleaned_dataframe.loc[:, s1_power] = self.data_pipe.get_power_expenditure(
             sector="Sector1",
             laps_frame=cleaned_dataframe
         )
@@ -182,7 +182,7 @@ class PreCompute:
         s2_power_config = self.circuit_config.power_config.get("Sector2")
         assert s2_power_config, "Failed loading S2 Power configs"
         s2_power = s2_power_config.y_var
-        cleaned_dataframe.loc[:, s2_power] = self.data_pipe.get_delta_kinetic_energy(
+        cleaned_dataframe.loc[:, s2_power] = self.data_pipe.get_power_expenditure(
             sector="Sector2",
             laps_frame=cleaned_dataframe
         )
@@ -191,7 +191,7 @@ class PreCompute:
         s3_kpower_config = self.circuit_config.power_config.get("Sector3")
         assert s3_kpower_config, "Failed loading S3 Power configs"
         s3_power = s3_kpower_config.y_var
-        cleaned_dataframe.loc[:, s3_power] = self.data_pipe.get_delta_kinetic_energy(
+        cleaned_dataframe.loc[:, s3_power] = self.data_pipe.get_power_expenditure(
             sector="Sector3",
             laps_frame=cleaned_dataframe
         )
@@ -286,10 +286,10 @@ class PreCompute:
             
             # Frames for Radar Plots
             scaled_quali_performance = self.data_pipe.get_rescaled_direct_features(
-                laps_frame=self.point_frames["best_quali_performance"]
+                laps_frame=self.point_frames["best_quali_performance"].copy()
             )
             scaled_quali_performance = self.data_pipe.get_rescaled_inverse_features(
-                laps_frame=self.point_frames["best_quali_performance"],
+                laps_frame=scaled_quali_performance,
                 session_type="quali"
             )
 
@@ -304,10 +304,10 @@ class PreCompute:
 
             # Frames for Radar Plots
             scaled_race_performance = self.data_pipe.get_rescaled_direct_features(
-                laps_frame=self.point_frames["mean_race_performance"]
+                laps_frame=self.point_frames["mean_race_performance"].copy()
             )
             scaled_race_performance = self.data_pipe.get_rescaled_inverse_features(
-                laps_frame=self.point_frames["mean_race_performance"],
+                laps_frame=scaled_race_performance,
                 session_type="race"
             )
 
