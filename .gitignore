@@ -1,8 +1,9 @@
 # Avoid package tracking cache
 __pycache__
 
-# Avoid tracking AI code review prompts
+# Avoid tracking Utility Markdown Files
 prompt.md
+progress.md
 
 # Avoid tracking IDE setting
 settings.json
