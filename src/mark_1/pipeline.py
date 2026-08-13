@@ -344,7 +344,7 @@ class DataPipeline:
         
         return laps_frame
     
-    def get_rescaled_inverse_features(self, laps_frame: DataFrame, session_type: str) -> DataFrame:
+    def get_rescaled_inverse_features(self, laps_frame: DataFrame) -> DataFrame:
         """Rescales the features which are inversely proportional."""
         for feature in self.feature_spec.INVERSE_PROPORTION:
             laps_frame.loc[:, feature] = self._scale_inverse(

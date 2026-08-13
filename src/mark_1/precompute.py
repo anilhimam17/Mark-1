@@ -56,7 +56,7 @@ class PreCompute:
 
         # Placeholders for all the Sessions
         self.max_race_laps: int = 0
-        self.precomputed_frames: dict[str, Laps] = {}
+        self.fastf1_frames: dict[str, Laps] = {}
         self.point_frames: dict[str, DataFrame] = {}
         self.results_frames: dict[str, list] = {}
 
@@ -227,14 +227,14 @@ class PreCompute:
                     max_race_laps=self.max_race_laps,
                     avg_laptime=row["LapTime"]
                 )
-            self.point_frames["driver_fuel_flows"] = DataFrame({
+            self.point_frames["race_driver_fuel_flows"] = DataFrame({
                 "Driver": list(driver_fuel_flows.keys()),
                 "MeanFuelFlow": list(driver_fuel_flows.values())
             })
 
             # Lap-wise fuel burn based on laptime and avg fuel flow
             lap_fuel_burn = Series([], dtype=float)
-            for _, row in self.point_frames["driver_fuel_flows"].iterrows():
+            for _, row in self.point_frames["race_driver_fuel_flows"].iterrows():
                 driver_fuel_burn = self.data_pipe.get_lap_fuel_burn(
                     laptimes=cleaned_dataframe.pick_drivers(row["Driver"])["LapTime"],
                     effective_fuel_flow=row["MeanFuelFlow"]
@@ -265,7 +265,7 @@ class PreCompute:
             )
 
             # Max Fuel burned by each driver over the race distance
-            self.point_frames["max_fuel_burn"] = (
+            self.point_frames["race_max_fuel_burn"] = (
                 cleaned_dataframe
                 .groupby("Driver")["CumulativeLapFuelBurn"]
                 .last()
@@ -280,39 +280,37 @@ class PreCompute:
             cleaned_dataframe.rename(new_cols, axis=1, inplace=True)
 
             # Fastest Lap Point Estimates
-            self.point_frames["best_quali_performance"] = self.data_pipe.get_filtered_quali_laps(
+            self.point_frames["quali_best_performance"] = self.data_pipe.get_filtered_quali_laps(
                 laps_frame=cleaned_dataframe
             )
             
             # Frames for Radar Plots
             scaled_quali_performance = self.data_pipe.get_rescaled_direct_features(
-                laps_frame=self.point_frames["best_quali_performance"].copy()
+                laps_frame=self.point_frames["quali_best_performance"].copy()
             )
             scaled_quali_performance = self.data_pipe.get_rescaled_inverse_features(
-                laps_frame=scaled_quali_performance,
-                session_type="quali"
+                laps_frame=scaled_quali_performance
             )
 
             # Fastest Lap Scaled Performance
-            self.point_frames["scaled_quali_performance"] = scaled_quali_performance
+            self.point_frames["quali_scaled_performance"] = scaled_quali_performance
 
         elif session_type == "race":
             # Mean Lap Peformance Estimates
-            self.point_frames["mean_race_performance"] = self.data_pipe.get_mean_race_performance(
+            self.point_frames["race_mean_performance"] = self.data_pipe.get_mean_race_performance(
                 laps_frame=cleaned_dataframe
             )
 
             # Frames for Radar Plots
             scaled_race_performance = self.data_pipe.get_rescaled_direct_features(
-                laps_frame=self.point_frames["mean_race_performance"].copy()
+                laps_frame=self.point_frames["race_mean_performance"].copy()
             )
             scaled_race_performance = self.data_pipe.get_rescaled_inverse_features(
-                laps_frame=scaled_race_performance,
-                session_type="race"
+                laps_frame=scaled_race_performance
             )
 
             # Fastest Lap Scaled Performance
-            self.point_frames["scaled_race_performance"] = scaled_race_performance
+            self.point_frames["race_scaled_performance"] = scaled_race_performance
 
         return cleaned_dataframe
 
@@ -337,7 +335,7 @@ class PreCompute:
                 .laps
                 .pick_drivers(self.results_frames["quali"])    
             )
-            self.precomputed_frames["quali_laps"] = self._data_engineering_wrapper(
+            self.fastf1_frames["quali_laps"] = self._data_engineering_wrapper(
                 session_laps=session_laps,
                 session_type="quali"
             )
@@ -359,7 +357,7 @@ class PreCompute:
                 .laps
                 .pick_drivers(self.results_frames["race"])
             )
-            self.precomputed_frames["race_laps"] = self._data_engineering_wrapper(
+            self.fastf1_frames["race_laps"] = self._data_engineering_wrapper(
                 session_laps=session_laps,
                 session_type="race"
             )
@@ -367,7 +365,7 @@ class PreCompute:
         # Optional Sessions if applicable
         if self.gp_weekend.sprint_quali_session:
             # Cacheing the Results for the Session
-            self.results_frames["sprint_quali"] = (
+            self.results_frames["quali_sprint"] = (
                 self.gp_weekend
                 .sprint_quali_session
                 .results
@@ -380,16 +378,16 @@ class PreCompute:
                 self.gp_weekend
                 .sprint_quali_session
                 .laps
-                .pick_drivers(self.results_frames["sprint_quali"])
+                .pick_drivers(self.results_frames["quali_sprint"])
             )
-            self.precomputed_frames["sprint_quali_laps"] = self._data_engineering_wrapper(
+            self.fastf1_frames["sprint_quali_laps"] = self._data_engineering_wrapper(
                 session_laps=session_laps,
                 session_type="quali"
             )
 
         if self.gp_weekend.sprint_session:
             # Cacheing the Results for the Session
-            self.results_frames["sprint_race"] = (
+            self.results_frames["race_sprint"] = (
                 self.gp_weekend
                 .sprint_session
                 .results
@@ -402,9 +400,9 @@ class PreCompute:
                 self.gp_weekend
                 .sprint_session
                 .laps
-                .pick_drivers(self.results_frames["sprint_race"])
+                .pick_drivers(self.results_frames["race_sprint"])
             )
-            self.precomputed_frames["sprint_race_laps"] = self._data_engineering_wrapper(
+            self.fastf1_frames["sprint_race_laps"] = self._data_engineering_wrapper(
                 session_laps=session_laps,
                 session_type="race"
             )
