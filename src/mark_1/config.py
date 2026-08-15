@@ -15,6 +15,31 @@ SECTOR_MAPS: dict[str, tuple[str, str, str]] = {
     "Sector3": ("SpeedFL", "Sector3Time", "KineticEnergyS3_KJ")
 }
 
+DRIVER_ABBREVIATIONS: list[str] = [
+    'RUS',
+    'VER',
+    'ANT',
+    'PIA',
+    'HAM',
+    'HAD',
+    'NOR',
+    'LEC',
+    'LAW',
+    'LIN',
+    'BOR',
+    'HUL',
+    'GAS',
+    'BEA',
+    'COL',
+    'OCO',
+    'ALB',
+    'ALO',
+    'STR',
+    'SAI',
+    'PER',
+    'BOT'
+]
+
 # ======================= Feature / Data Configurations =======================
 
 
