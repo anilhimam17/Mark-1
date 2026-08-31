@@ -10,6 +10,7 @@ and Racing-all-Along workflows downstream.
 from fastf1.events import Event
 from fastf1.core import Laps
 from fastf1 import get_event
+from fastf1.plotting import get_driver_style, set_default_colormap
 
 # Data Deps
 from pandas import DataFrame, Series, concat
@@ -58,7 +59,11 @@ class PreCompute:
         self.max_race_laps: int = 0
         self.fastf1_frames: dict[str, Laps] = {}
         self.point_frames: dict[str, DataFrame] = {}
-        self.results_frames: dict[str, list] = {}
+        self.results_frames: dict[str, DataFrame] = {}
+
+        # Initialising the Color Map
+        set_default_colormap(colormap="official")        
+        self.driver_color_mapping: dict[str, dict] = {}
 
         # Data Pipeline and Configs
         self.data_pipe = DataPipeline(circuit=self.race_name)
@@ -320,12 +325,11 @@ class PreCompute:
         # Standard Sessions
         if self.gp_weekend.quali_session:
             # Cacheing the Results for the Session
-            self.results_frames["quali"] = (
+            self.results_frames["quali_results"] = (
                 self.gp_weekend
                 .quali_session
                 .results
-                .iloc[:self.load_drivers]["Abbreviation"]
-                .tolist()
+                .iloc[:self.load_drivers][["Abbreviation", "Q3"]]
             )
             
             # Picking only the Top 10 Drivers from the Session
@@ -333,21 +337,30 @@ class PreCompute:
                 self.gp_weekend
                 .quali_session
                 .laps
-                .pick_drivers(self.results_frames["quali"])    
+                .pick_drivers(self.results_frames["quali_results"]["Abbreviation"].tolist())
             )
             self.fastf1_frames["quali_laps"] = self._data_engineering_wrapper(
                 session_laps=session_laps,
                 session_type="quali"
             )
+
+            # Driver Color Map for the Session
+            session_color_maps = {}
+            for driver in self.results_frames["quali_results"]["Abbreviation"].tolist():
+                session_color_maps[driver] = get_driver_style(
+                    identifier=driver, 
+                    style=["marker", "color"],
+                    session=self.gp_weekend.quali_session
+                )
+            self.driver_color_mapping["quali_colormap"] = session_color_maps
         
         if self.gp_weekend.race_session:
             # Cacheing the Results for the Session
-            self.results_frames["race"] = (
+            self.results_frames["race_results"] = (
                 self.gp_weekend
                 .race_session
                 .results
-                .iloc[:self.load_drivers]["Abbreviation"]
-                .tolist()
+                .iloc[:self.load_drivers][["Abbreviation", "Time"]]
             )
 
             # Picking only the Top 10 Drivers from the Session
@@ -355,12 +368,22 @@ class PreCompute:
                 self.gp_weekend
                 .race_session
                 .laps
-                .pick_drivers(self.results_frames["race"])
+                .pick_drivers(self.results_frames["race_results"]["Abbreviation"].tolist())
             )
             self.fastf1_frames["race_laps"] = self._data_engineering_wrapper(
                 session_laps=session_laps,
                 session_type="race"
             )
+
+            # Driver Color Map for the Session
+            session_color_maps = {}
+            for driver in self.results_frames["race_results"]["Abbreviation"].tolist():
+                session_color_maps[driver] = get_driver_style(
+                    identifier=driver, 
+                    style=["marker", "color"],
+                    session=self.gp_weekend.race_session
+                )
+            self.driver_color_mapping["race_colormap"] = session_color_maps
         
         # Optional Sessions if applicable
         if self.gp_weekend.sprint_quali_session:
@@ -369,8 +392,7 @@ class PreCompute:
                 self.gp_weekend
                 .sprint_quali_session
                 .results
-                .iloc[:self.load_drivers]["Abbreviation"]
-                .tolist()
+                .iloc[:self.load_drivers][["Abbreviation", "Q3"]]
             )
 
             # Picking only the Top 10 Drivers from the Session
@@ -378,12 +400,22 @@ class PreCompute:
                 self.gp_weekend
                 .sprint_quali_session
                 .laps
-                .pick_drivers(self.results_frames["quali_sprint"])
+                .pick_drivers(self.results_frames["quali_sprint"]["Abbreviation"].tolist())
             )
             self.fastf1_frames["sprint_quali_laps"] = self._data_engineering_wrapper(
                 session_laps=session_laps,
                 session_type="quali"
             )
+
+            # Driver Color Map for the Session
+            session_color_maps = {}
+            for driver in self.results_frames["quali_sprint"]["Abbreviation"].tolist():
+                session_color_maps[driver] = get_driver_style(
+                    identifier=driver, 
+                    style=["marker", "color"],
+                    session=self.gp_weekend.sprint_quali_session
+                )
+            self.driver_color_mapping["quali_sprint"] = session_color_maps
 
         if self.gp_weekend.sprint_session:
             # Cacheing the Results for the Session
@@ -391,8 +423,7 @@ class PreCompute:
                 self.gp_weekend
                 .sprint_session
                 .results
-                .iloc[:self.load_drivers]["Abbreviation"]
-                .tolist()
+                .iloc[:self.load_drivers][["Abbreviation", "Time"]]
             )
 
             # Picking only the Top 10 Drivers from the Session
@@ -400,9 +431,19 @@ class PreCompute:
                 self.gp_weekend
                 .sprint_session
                 .laps
-                .pick_drivers(self.results_frames["race_sprint"])
+                .pick_drivers(self.results_frames["race_sprint"]["Abbreviation"].tolist())
             )
             self.fastf1_frames["sprint_race_laps"] = self._data_engineering_wrapper(
                 session_laps=session_laps,
                 session_type="race"
             )
+
+            # Driver Color Map for the Session
+            session_color_maps = {}
+            for driver in self.results_frames["race_sprint"]["Abbreviation"].tolist():
+                session_color_maps[driver] = get_driver_style(
+                    identifier=driver, 
+                    style=["marker", "color"],
+                    session=self.gp_weekend.sprint_session
+                )
+            self.driver_color_mapping["race_sprint"] = session_color_maps
