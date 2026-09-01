@@ -2,34 +2,34 @@
     "circuit_name": "silverstone",
     "aero_config": {
         "Sector1": {
-            "title": "Sector - 1\nStraight Line Speed, High Speed & High Downforce (Front Axle)",
+            "title": "Sector - 1\nFront Axle AEI",
             "x_var": "Sector1Time",
             "y_var": "FrontAEI"
         },
         "Sector2": {
-            "title": "Sector - 2\nMedium - High Speed, Drag / Downforce Tradeoff (Balance)",
+            "title": "Sector - 2\nBalanced AEI",
             "x_var": "Sector2Time",
             "y_var": "BalancedAEI"
         },
         "Sector3": {
-            "title": "Sector - 3\nStraight Line Speed, Drag / Downforce (Rear Axle)",
+            "title": "Sector - 3\nRear Axle AEI",
             "x_var": "Sector3Time",
             "y_var": "RearAEI"
         }
     },
     "ke_config": {
         "Sector1": {
-            "title": "Sector - 1\nStraight Line Speed, High Speed & High Downforce (Front Axle)",
+            "title": "Sector - 1\nFront Axle Performance",
             "x_var": "Driver",
             "y_var": "KineticEnergyS1_KJ"
         },
         "Sector2": {
-            "title": "Sector - 2\nMedium - High Speed, Drag / Downforce Tradeoff (Balance)",
+            "title": "Sector - 2\nBalanced Performance",
             "x_var": "Driver",
             "y_var": "KineticEnergyS2_KJ"
         },
         "Sector3": {
-            "title": "Sector - 3\nStraight Line Speed, Drag / Downforce (Front Axle)",
+            "title": "Sector - 3\nFront Axle Performance",
             "x_var": "Driver",
             "y_var": "KineticEnergyS3_KJ"
         }
